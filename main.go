@@ -11,14 +11,23 @@ type E struct {
 	Err  error
 }
 
-func (e E) Error() string {
+func (e *E) Error() string {
 	return e.Err.Error()
 }
 
+func StatusCode(err error) int {
+	if e, ok := err.(*E); ok {
+		return e.Code
+	}
+	return http.StatusBadRequest
+}
+
 func main() {
-	fmt.Println(New())
+	err := New()
+	fmt.Println(err)
+	fmt.Println(StatusCode(err))
 }
 
 func New() error {
-	return E{Code: http.StatusBadRequest, Err: errors.New("error")}
+	return &E{Code: http.StatusInternalServerError, Err: errors.New("error")}
 }
