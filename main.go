@@ -17,6 +17,10 @@ func (e *E) Error() string {
 	return e.Err.Error()
 }
 
+func (e *E) Unwrap() error {
+	return e.Err
+}
+
 type Frame struct {
 	frames [3]uintptr
 }
@@ -47,7 +51,7 @@ func StatusCode(err error) int {
 	return http.StatusBadRequest
 }
 
-func New(code int, err error) error {
+func Wrap(code int, err error) error {
 	return &E{
 		Code:  code,
 		Err:   err,
@@ -55,8 +59,16 @@ func New(code int, err error) error {
 	}
 }
 
+func New(code int, msg string) error {
+	return &E{
+		Code:  code,
+		Err:   errors.New(msg),
+		frame: caller(1),
+	}
+}
+
 func main() {
-	err := New(http.StatusAccepted, errors.New("err"))
+	err := Wrap(http.StatusAccepted, errors.New("err"))
 	fmt.Println(err)
 	fmt.Println(StatusCode(err))
 }
