@@ -21,12 +21,6 @@ type Frame struct {
 	frames [3]uintptr
 }
 
-func caller(skip int) Frame {
-	var s Frame
-	runtime.Callers(skip+1, s.frames[:])
-	return s
-}
-
 func (f Frame) location() (function, file string, line int) {
 	frames := runtime.CallersFrames(f.frames[:])
 	if _, ok := frames.Next(); !ok {
@@ -39,6 +33,12 @@ func (f Frame) location() (function, file string, line int) {
 	return fr.Function, fr.File, fr.Line
 }
 
+func caller(skip int) Frame {
+	var s Frame
+	runtime.Callers(skip+1, s.frames[:])
+	return s
+}
+
 func StatusCode(err error) int {
 	if e, ok := err.(*E); ok {
 		fmt.Println(e.frame.location())
@@ -47,16 +47,16 @@ func StatusCode(err error) int {
 	return http.StatusBadRequest
 }
 
-func New() error {
+func New(code int, err error) error {
 	return &E{
-		Code:  http.StatusInternalServerError,
-		Err:   errors.New("error"),
+		Code:  code,
+		Err:   err,
 		frame: caller(1),
 	}
 }
 
 func main() {
-	err := New()
+	err := New(http.StatusAccepted, errors.New("err"))
 	fmt.Println(err)
 	fmt.Println(StatusCode(err))
 }
