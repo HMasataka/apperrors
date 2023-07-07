@@ -1,6 +1,7 @@
 package apperrors
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"runtime"
@@ -54,10 +55,18 @@ func StatusCode(err error) int {
 	return http.StatusBadRequest
 }
 
-func New(code ErrorCode, msg error) error {
+func Wrap(code ErrorCode, err error) error {
 	return &Error{
 		Code:  code,
-		Err:   msg,
+		Err:   err,
+		frame: caller(1),
+	}
+}
+
+func New(code ErrorCode, msg string) error {
+	return &Error{
+		Code:  code,
+		Err:   errors.New(msg),
 		frame: caller(1),
 	}
 }
