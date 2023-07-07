@@ -1,23 +1,27 @@
 package apperrors
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"runtime"
 )
 
-type E struct {
-	Code  int
+type ErrorCode struct {
+	Code int
+	Name string
+}
+
+type Error struct {
+	Code  ErrorCode
 	Err   error
 	frame Frame
 }
 
-func (e *E) Error() string {
+func (e *Error) Error() string {
 	return e.Err.Error()
 }
 
-func (e *E) Unwrap() error {
+func (e *Error) Unwrap() error {
 	return e.Err
 }
 
@@ -44,24 +48,16 @@ func caller(skip int) Frame {
 }
 
 func StatusCode(err error) int {
-	if e, ok := err.(*E); ok {
-		return e.Code
+	if e, ok := err.(*Error); ok {
+		return e.Code.Code
 	}
 	return http.StatusBadRequest
 }
 
-func Wrap(code int, err error) error {
-	return &E{
+func New(code ErrorCode, msg error) error {
+	return &Error{
 		Code:  code,
-		Err:   err,
-		frame: caller(1),
-	}
-}
-
-func New(code int, msg string) error {
-	return &E{
-		Code:  code,
-		Err:   errors.New(msg),
+		Err:   msg,
 		frame: caller(1),
 	}
 }
@@ -69,7 +65,7 @@ func New(code int, msg string) error {
 func Print(args ...any) {
 	f := make([]any, len(args))
 	for i, v := range args {
-		if e, ok := v.(*E); ok {
+		if e, ok := v.(*Error); ok {
 			fn, file, line := e.frame.location()
 			f[i] = fmt.Sprintf("func: %v, file: %v, line: %v, err: %v", fn, file, line, e.Error())
 			continue
@@ -84,7 +80,7 @@ func Print(args ...any) {
 func Printf(format string, args ...any) {
 	f := make([]any, len(args))
 	for i, v := range args {
-		if e, ok := v.(*E); ok {
+		if e, ok := v.(*Error); ok {
 			fn, file, line := e.frame.location()
 			f[i] = fmt.Sprintf("func: %v, file: %v, line: %v, err: %v", fn, file, line, e.Error())
 			continue
