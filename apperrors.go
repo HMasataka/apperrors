@@ -19,7 +19,7 @@ type Error struct {
 }
 
 func (e *Error) Error() string {
-	return e.Err.Error()
+	return fmt.Sprintf("%v: %v", e.Code.Name, e.Err.Error())
 }
 
 func (e *Error) Unwrap() error {
